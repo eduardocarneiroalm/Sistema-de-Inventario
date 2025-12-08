@@ -1,134 +1,133 @@
-import express from 'express';
-import db from '../db/db.js';
+import express from "express";
+import pool from "../db/db.js";
 
 const router = express.Router();
 
-
-router.post('/adicionar', (req, res) => {
+// ============================
+// 1️⃣ ADICIONAR PRODUTO
+// ============================
+router.post("/adicionar", async (req, res) => {
     const { equipamento, quantidade, local } = req.body;
 
     if (!equipamento || !quantidade || !local) {
-        return res.status(400).json({ erro: 'Preencha todos os campos.' });
+        return res.status(400).json({ erro: "Preencha todos os campos." });
     }
 
-    // 1. Primeiro: verificar se o local existe
-    const buscarLocal = `SELECT id_locais FROM locais WHERE nome_locais = ?`;
-
-    db.query(buscarLocal, [local], (err, resultadoLocal) => {
-        if (err) return res.status(500).json({ erro: err });
+    try {
+        // Verificar se local existe
+        const buscarLocal = `SELECT id_locais FROM locais WHERE nome_locais = ?`;
+        const [resultadoLocal] = await pool.query(buscarLocal, [local]);
 
         let idLocal;
 
         if (resultadoLocal.length > 0) {
-            // Local encontrado
             idLocal = resultadoLocal[0].id_locais;
-            cadastrarProduto();
         } else {
-            // Local não existe → criar novo
+            // Criar local
             const criarLocal = `INSERT INTO locais (nome_locais) VALUES (?)`;
-
-            db.query(criarLocal, [local], (erroCriar, resultadoCriar) => {
-                if (erroCriar) return res.status(500).json({ erro: erroCriar });
-
-                idLocal = resultadoCriar.insertId;
-                cadastrarProduto();
-            });
+            const [resultadoCriar] = await pool.query(criarLocal, [local]);
+            idLocal = resultadoCriar.insertId;
         }
 
-        function cadastrarProduto() {
-            const inserirProduto = `
-                INSERT INTO produtos (nome, descricao, quantidade, id_local)
-                VALUES (?, ?, ?, ?)
-            `;
+        // Cadastrar produto
+        const inserirProduto = `
+            INSERT INTO produtos (nome, descricao, quantidade, id_local)
+            VALUES (?, ?, ?, ?)
+        `;
 
-            db.query(
-                inserirProduto,
-                [equipamento, 'Sem descrição', quantidade, idLocal],
-                (erroProd) => {
-                    if (erroProd) return res.status(500).json({ erro: erroProd });
+        await pool.query(inserirProduto, [
+            equipamento,
+            "Sem descrição",
+            quantidade,
+            idLocal
+        ]);
 
-                    res.json({ mensagem: 'Produto cadastrado com sucesso!' });
-                }
-            );
-        }
-    });
+        return res.json({ mensagem: "Produto cadastrado com sucesso!" });
+
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ erro: "Erro ao adicionar produto." });
+    }
 });
 
 
 // ============================
-// 2️⃣ LISTAR TODOS OS PRODUTOS
+// 2️⃣ LISTAR PRODUTOS
 // ============================
-router.get('/listar', (req, res) => {
-    const sql = `
-        SELECT 
-            p.id_produtos,
-            p.nome,
-            p.descricao,
-            p.quantidade,
-            l.nome_locais AS local
-        FROM produtos p
-        JOIN locais l ON p.id_local = l.id_locais
-    `;
+router.get("/listar", async (req, res) => {
+    try {
+        const sql = `
+            SELECT 
+                p.id_produtos,
+                p.nome,
+                p.descricao,
+                p.quantidade,
+                l.nome_locais AS local
+            FROM produtos p
+            JOIN locais l ON p.id_local = l.id_locais
+        `;
 
-    db.query(sql, (err, results) => {
-        if (err) return res.status(500).json({ erro: err });
-
+        const [results] = await pool.query(sql);
         res.json(results);
-    });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ erro: "Erro ao listar produtos." });
+    }
 });
 
 
 // ============================
 // 3️⃣ EDITAR PRODUTO
 // ============================
-router.put('/editar/:id', (req, res) => {
+router.put("/editar/:id", async (req, res) => {
     const id = req.params.id;
     const { nome, quantidade, local } = req.body;
 
-    // 1 - Buscar id_local da tabela de produtos
-    const sqlLocal = "SELECT id_local FROM produtos WHERE id_produtos = ?";
-
-    db.query(sqlLocal, [id], (err, resultado) => {
-        if (err) return res.status(500).json({ erro: err });
-
+    try {
+        // Buscar id_local
+        const sqlLocal = "SELECT id_local FROM produtos WHERE id_produtos = ?";
+        const [resultado] = await pool.query(sqlLocal, [id]);
         const idLocal = resultado[0].id_local;
 
-        // 2 - Atualizar o nome do local na tabela 'locais'
+        // Atualizar local
         const sqlUpdateLocal = "UPDATE locais SET nome_locais = ? WHERE id_locais = ?";
+        await pool.query(sqlUpdateLocal, [local, idLocal]);
 
-        db.query(sqlUpdateLocal, [local, idLocal], (err2) => {
-            if (err2) return res.status(500).json({ erro: err2 });
+        // Atualizar produto
+        const sqlUpdateProd = `
+            UPDATE produtos 
+            SET nome = ?, quantidade = ?
+            WHERE id_produtos = ?
+        `;
 
-            // 3 - Atualizar produto
-            const sqlUpdateProd = `
-                UPDATE produtos 
-                SET nome = ?, quantidade = ? 
-                WHERE id_produtos = ?
-            `;
+        await pool.query(sqlUpdateProd, [nome, quantidade, id]);
 
-            db.query(sqlUpdateProd, [nome, quantidade, id], (err3) => {
-                if (err3) return res.status(500).json({ erro: err3 });
+        res.json({ mensagem: "Produto atualizado com sucesso!" });
 
-                res.json({ mensagem: "Produto atualizado com sucesso!" });
-            });
-        });
-    });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ erro: "Erro ao editar produto." });
+    }
 });
 
 
 // ============================
 // 4️⃣ DELETAR PRODUTO
 // ============================
-router.delete('/deletar/:id', (req, res) => {
+router.delete("/deletar/:id", async (req, res) => {
     const id = req.params.id;
 
-    const sql = `DELETE FROM produtos WHERE id_produtos = ?`;
+    try {
+        const sql = `DELETE FROM produtos WHERE id_produtos = ?`;
+        await pool.query(sql, [id]);
 
-    db.query(sql, [id], (err) => {
-        if (err) return res.status(500).json({ erro: err });
-        res.json({ mensagem: 'Produto deletado!' });
-    });
+        res.json({ mensagem: "Produto deletado!" });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ erro: "Erro ao deletar produto." });
+    }
 });
-
 
 export default router;
