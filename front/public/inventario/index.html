@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Inventário</title>
+    <link rel="stylesheet" href="/inventario/colors.css">
+</head>
+<body>
+
+    <div class="container-global">
+        
+        <!-- FORMULÁRIO À ESQUERDA -->
+        <div class="container-esquerda">
+            <div id="msg-sucesso" class="msg-sucesso">Equipamento registrado com sucesso!</div>
+            <form id="formInventario">
+                <h1>Sistema de Inventário</h1>
+
+                <label for="equipamento" class="segmento">Nome do Equipamento:</label>
+                <input type="text" id="equipamento" name="equipamento" placeholder="Ex: Monitor" required>
+
+                <label for="quantidade" class="segmento">Quantidade:</label>
+                <input type="number" id="quantidade" name="quantidade" placeholder="Ex: 5" min="1" required>
+                
+                <label for="local" class="segmento">Local/descrição:</label>
+                <input type="text" id="local" name="local" placeholder="Ex: bancada" required>
+
+                <button type="submit" class="button">Registrar</button>
+            </form>
+        </div>
+
+        <!-- LISTA À DIREITA -->
+        <div class="container-direita">
+            <div class="lista-cards" id="lista-cards">
+                <!-- Cards vão aparecer aqui -->
+            </div>
+        </div>
+
+    </div>
+
+    <script src="./script.js"></script>
+</body>
+</html>
