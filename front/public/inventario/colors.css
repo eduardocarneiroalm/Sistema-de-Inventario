@@ -78,6 +78,11 @@ label {
     padding: 15px;
     margin-bottom: 15px;
     color: #27294e;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    width: 100%;
+    max-width: 100%;
 }
 
 .card .h2 {
@@ -88,6 +93,7 @@ label {
 .card p {
     margin: 3px 0;
     font-size: 15px;
+    white-space: normal;
 }
 
 .btn-editar {
@@ -224,6 +230,12 @@ label {
         align-items: center;
         padding: 20px 0;
         gap: 20px;
+    }
+
+    .card {
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
     }
 
     .container-esquerda,
