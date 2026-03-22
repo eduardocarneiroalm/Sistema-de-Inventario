@@ -3,9 +3,7 @@ import pool from "../db/db.js";
 
 const router = express.Router();
 
-// ============================
-// 1️⃣ ADICIONAR PRODUTO
-// ============================
+// 1. Adicionar Produto
 router.post("/adicionar", async (req, res) => {
   const { equipamento, quantidade, local } = req.body;
 
@@ -43,9 +41,8 @@ router.post("/adicionar", async (req, res) => {
   }
 });
 
-// ============================
-// 2️⃣ LISTAR PRODUTOS
-// ============================
+// 2. Listar Produtos
+
 router.get("/listar", async (req, res) => {
   try {
     const sql = `
@@ -66,9 +63,8 @@ router.get("/listar", async (req, res) => {
   }
 });
 
-// ============================
-// 3️⃣ EDITAR PRODUTO
-// ============================
+// 3. Editar Produto
+
 router.put("/editar/:id", async (req, res) => {
   const id = req.params.id;
   const { nome, quantidade, local } = req.body;
@@ -98,9 +94,8 @@ router.put("/editar/:id", async (req, res) => {
   }
 });
 
-// ============================
-// 4️⃣ DELETAR PRODUTO
-// ============================
+// 4. Deletar Produto
+
 router.delete("/deletar/:id", async (req, res) => {
   const id = req.params.id;
 
